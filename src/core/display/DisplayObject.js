@@ -633,6 +633,21 @@ export default class DisplayObject extends EventEmitter
     {
         this._filters = value && value.slice();
     }
+
+    /**
+     * Sets rigidity of the DisplayObject. i.e. it cannot scale with it's parent.
+     *
+     * @member {boolean}
+     */
+    get rigid()
+    {
+        return this.transform.rigid;
+    }
+
+    set rigid(value) // eslint-disable-line require-jsdoc
+    {
+        this.transform.rigid = value;
+    }
 }
 
 // performance increase to avoid using call.. (10x faster)
