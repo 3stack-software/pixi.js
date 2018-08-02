@@ -45,6 +45,7 @@ export default class TransformStatic extends TransformBase
          */
         this.skew = new ObservablePoint(this.updateSkew, this, 0, 0);
 
+        this.rigid = false;
         this._rotation = 0;
 
         this._cx = 1; // cos rotation + skewY;
@@ -122,8 +123,28 @@ export default class TransformStatic extends TransformBase
             lt.c = this._cy * this.scale._y;
             lt.d = this._sy * this.scale._y;
 
-            lt.tx = this.position._x - ((this.pivot._x * lt.a) + (this.pivot._y * lt.c));
-            lt.ty = this.position._y - ((this.pivot._x * lt.b) + (this.pivot._y * lt.d));
+            /*   Replace this with the below if statement and it works, but cursor updates are slow
+             *   so the cursor might be a little off from the object transform x/y. (max 15px or so)
+             *   the split between the local and world transforms makes it hard for this to work in between.
+             */
+            // if (!this.rigid)
+            // {
+            //     lt.tx = this.position._x - ((this.pivot._x * lt.a) + (this.pivot._y * lt.c));
+            //     lt.ty = this.position._y - ((this.pivot._x * lt.b) + (this.pivot._y * lt.d));
+            // }
+
+            if (this.rigid)
+            {
+                const pt = parentTransform.worldTransform;
+                // TODO check if pt.a and pt.d are in the right spot, scale is currently so can't test.
+                lt.tx = this.position._x - ((this.pivot._x / pt.a) + ((this.pivot._y / pt.a) * lt.c));
+                lt.ty = this.position._y - (((this.pivot._x / pt.d) * lt.b) + (this.pivot._y / pt.d));
+            }
+            else
+            {
+                lt.tx = this.position._x - ((this.pivot._x * lt.a) + (this.pivot._y * lt.c));
+                lt.ty = this.position._y - ((this.pivot._x * lt.b) + (this.pivot._y * lt.d));
+            }
             this._currentLocalID = this._localID;
 
             // force an update..
@@ -142,6 +163,16 @@ export default class TransformStatic extends TransformBase
             wt.d = (lt.c * pt.b) + (lt.d * pt.d);
             wt.tx = (lt.tx * pt.a) + (lt.ty * pt.c) + pt.tx;
             wt.ty = (lt.tx * pt.b) + (lt.ty * pt.d) + pt.ty;
+
+            if (this.rigid)
+            {
+                lt.tx = this.position._x - ((this.pivot._x / pt.a) + ((this.pivot._y / pt.a) * lt.c));
+                lt.ty = this.position._y - (((this.pivot._x / pt.d) * lt.b) + (this.pivot._y / pt.d));
+                wt.a = lt.a + (lt.b * pt.c);
+                wt.b = (lt.a * pt.b) + lt.b;
+                wt.c = lt.c + (lt.d * pt.c);
+                wt.d = (lt.c * pt.b) + lt.d;
+            }
 
             this._parentID = parentTransform._worldID;
 
